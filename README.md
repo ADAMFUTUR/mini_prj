@@ -1,36 +1,39 @@
-### Rapport sur l'implémentation de l'injection de dépendances (DI) en Java avec un mini-framework
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Rapport - Mini-Framework d'Injection de Dépendances</title>
+</head>
+<body>
+    <h1>Rapport : Implémentation d'un mini-framework d'injection de dépendances (DI) en Java</h1>
 
-#### Introduction
+    <h2>Introduction</h2>
+    <p>Dans ce projet, nous avons conçu un <strong>mini-framework</strong> d’injection de dépendances inspiré de <strong>Spring</strong>.<br>
+    L'objectif principal est de simplifier la gestion des dépendances entre les objets via trois techniques d’injection :</p>
+    <ul>
+        <li>Injection par constructeur</li>
+        <li>Injection par setter</li>
+        <li>Injection par attribut</li>
+    </ul>
+    <p>Nous utilisons également <strong>la réflexion</strong> pour injecter automatiquement les dépendances au moment de la création des objets.</p>
+    <p>Le framework propose :</p>
+    <ul>
+        <li>L'injection via un fichier <strong>XML</strong> (en utilisant JAX-B),</li>
+        <li>L'injection via <strong>annotations</strong>,</li>
+        <li>Et surtout, <strong>l'injection dynamique</strong> par <strong>réflexion</strong>.</li>
+    </ul>
 
-Dans le cadre de ce projet, nous allons implémenter un mini-framework d'injection de dépendances similaire à Spring. L'objectif principal est de fournir un moyen de gérer les dépendances des objets via des techniques d'injection (par constructeur, par setter, ou via des attributs) et de démontrer l'utilisation de la réflexion pour gérer l'injection des dépendances dans les objets au moment de leur création.
+    <h2>Partie 1 : Concepts de base de l'injection de dépendances</h2>
 
-Nous allons également aborder les différentes façons d'injecter des dépendances, à savoir :
-1. L'injection via un fichier XML (configuration via JAX-B).
-2. L'injection via des annotations.
-3. L'injection via la réflexion (qui est le cœur du mini-framework).
-
-Le framework prendra en charge l'injection de dépendances de manière dynamique (par la réflexion) et statique (via des méthodes définies comme `@Autowired` ou des annotations spécifiques).
-
-### Partie 1: Concept d'Injection des Dépendances (DI)
-
-#### 1. Création de l'interface `IDao`
-
-L'interface `IDao` représente un contrat pour l'accès aux données. Cette interface a une méthode `getData()` qui retourne des informations d'une source de données.
-
-```java
-package net.achraf.dao;
+    <h3>1. Création de l'interface <code>IDao</code></h3>
+    <pre><code>package net.adam.dao;
 
 public interface IDao {
     String getData();
-}
-```
+}</code></pre>
 
-#### 2. Implémentation de l'interface `IDao`
-
-`DaoImpl` est la classe qui implémente `IDao` et fournit une méthode pour accéder aux données. Elle simule l'accès à une base de données.
-
-```java
-package net.achraf.dao;
+    <h3>2. Implémentation de <code>IDao</code></h3>
+    <pre><code>package net.adam.dao;
 
 public class DaoImpl implements IDao {
 
@@ -38,35 +41,25 @@ public class DaoImpl implements IDao {
     public String getData() {
         return "Données récupérées depuis la source de données";
     }
-}
-```
+}</code></pre>
 
-#### 3. Création de l'interface `IMetier`
-
-L'interface `IMetier` contient la méthode métier `calcul()`, qui sera responsable du traitement des données.
-
-```java
-package net.achraf.metier;
+    <h3>3. Création de l'interface <code>IMetier</code></h3>
+    <pre><code>package net.adam.metier;
 
 public interface IMetier {
     void calcul();
-}
-```
+}</code></pre>
 
-#### 4. Implémentation de l'interface `IMetier`
+    <h3>4. Implémentation de <code>IMetier</code></h3>
+    <pre><code>package net.adam.metier;
 
-`MetierImpl` est la classe qui implémente `IMetier`. Elle contient une dépendance vers `IDao` et utilise cette dépendance dans la méthode `calcul()`.
-
-```java
-package net.achraf.metier;
-
-import net.achraf.dao.IDao;
+import net.adam.dao.IDao;
 
 public class MetierImpl implements IMetier {
 
     private IDao dao;
 
-    // Constructor pour l'injection de dépendances
+    // Injection via le constructeur
     public MetierImpl(IDao dao) {
         this.dao = dao;
     }
@@ -75,88 +68,66 @@ public class MetierImpl implements IMetier {
     public void calcul() {
         System.out.println("Traitement métier avec les données : " + dao.getData());
     }
-}
-```
+}</code></pre>
 
-### Partie 2: Le Mini Framework d'Injection de Dépendances
+    <h2>Partie 2 : Développement du Mini-Framework</h2>
 
-Le mini-framework doit gérer l'injection des dépendances de manière dynamique (par réflexion) et statique (par annotations ou XML). Nous allons créer un `BeanFactory` qui permet d'injecter des dépendances dans les objets.
+    <h3>5. Création du <code>BeanFactory</code></h3>
+    <pre><code>package net.adam.config;
 
-#### 5. Création du `BeanFactory`
-
-Le `BeanFactory` est responsable de la création des objets et de l'injection de leurs dépendances. Nous allons utiliser la réflexion pour déterminer le constructeur des classes et injecter les dépendances nécessaires.
-
-```java
-package net.achraf.config;
-
-import net.achraf.dao.IDao;
-import net.achraf.metier.IMetier;
-import net.achraf.metier.MetierImpl;
+import net.adam.dao.IDao;
+import net.adam.dao.DaoImpl;
 
 import java.lang.reflect.Constructor;
 
 public class BeanFactory {
 
-    // Méthode pour créer un bean (objet) et injecter ses dépendances
-    public static <T> T createBean(Class<T> clazz) throws Exception {
-        Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+    public static &lt;T&gt; T createBean(Class&lt;T&gt; clazz) throws Exception {
+        Constructor&lt;?&gt;[] constructors = clazz.getDeclaredConstructors();
         
-        // Recherche d'un constructeur avec des paramètres (injection par constructeur)
-        for (Constructor<?> constructor : constructors) {
-            if (constructor.getParameterCount() > 0) {
-                Class<?>[] parameterTypes = constructor.getParameterTypes();
+        for (Constructor&lt;?&gt; constructor : constructors) {
+            if (constructor.getParameterCount() &gt; 0) {
+                Class&lt;?&gt;[] parameterTypes = constructor.getParameterTypes();
                 
-                // Si le constructeur attend un paramètre de type IDao
                 if (parameterTypes.length == 1 && parameterTypes[0].equals(IDao.class)) {
-                    // Créer l'instance de IDao (DaoImpl)
-                    IDao dao = new DaoImpl(); 
-                    
-                    // Injecter la dépendance dans le constructeur
+                    IDao dao = new DaoImpl();
                     return (T) constructor.newInstance(dao);
                 }
             }
         }
-        
-        // Retourner l'instance sans dépendance si aucun constructeur avec paramètres n'est trouvé
         return clazz.getDeclaredConstructor().newInstance();
     }
-}
-```
+}</code></pre>
 
-### Partie 3: Test de l'injection de dépendances avec `Main`
+    <h2>Partie 3 : Test du Framework</h2>
+    <pre><code>package net.adam.annotation;
 
-Dans la classe `Main`, nous allons tester la création d'un objet `MetierImpl` en utilisant notre `BeanFactory` et vérifier que la dépendance `IDao` est correctement injectée.
-
-```java
-package net.achraf.annotation;
-
-import net.achraf.config.BeanFactory;
-import net.achraf.metier.IMetier;
-import net.achraf.metier.MetierImpl;
+import net.adam.config.BeanFactory;
+import net.adam.metier.IMetier;
+import net.adam.metier.MetierImpl;
 
 public class Main {
     public static void main(String[] args) {
         try {
-            // Créer une instance de MetierImpl via le BeanFactory
             IMetier metier = BeanFactory.createBean(MetierImpl.class);
-            // Appeler la logique métier
             metier.calcul();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-}
-```
+}</code></pre>
 
-### Partie 4: Résumé du Fonctionnement
+    <h2>Partie 4 : Résumé du fonctionnement</h2>
+    <ul>
+        <li><strong>Création d'objets</strong> : <code>BeanFactory</code> utilise la réflexion pour détecter les constructeurs adaptés.</li>
+        <li><strong>Injection des dépendances</strong> : Si un constructeur exige une dépendance (<code>IDao</code>), elle est instanciée et injectée automatiquement.</li>
+        <li><strong>Exécution</strong> : Une fois l'objet prêt, la logique métier (<code>calcul()</code>) est appelée.</li>
+    </ul>
 
-Le mini-framework fonctionne de la manière suivante :
+    <h2>Conclusion</h2>
+    <p>Ce mini-framework montre comment <strong>gérer l'injection de dépendances en Java</strong> sans utiliser des outils lourds comme Spring.<br>
+    Grâce à <strong>la réflexion</strong>, nous avons automatisé la création et l'injection des objets, ce qui offre une meilleure modularité et une séparation claire des responsabilités.<br>
+    Même s’il reste simple comparé à des solutions complètes, ce projet met en lumière <strong>les principes fondamentaux</strong> du développement orienté objets et de la conception flexible.</p>
 
-1. **Création de l'objet** : Le `BeanFactory` utilise la réflexion pour déterminer quel constructeur utiliser pour créer l'objet.
-2. **Injection des dépendances** : Lorsqu'un constructeur avec des paramètres est trouvé, le `BeanFactory` crée les objets nécessaires pour satisfaire les dépendances (par exemple, créer un `DaoImpl` et l'injecter dans un `MetierImpl`).
-3. **Exécution de la logique métier** : Une fois l'objet créé et les dépendances injectées, la méthode `calcul()` est appelée sur l'objet `MetierImpl`.
-
-### Conclusion
-
-Ce mini-framework d'injection de dépendances montre comment gérer l'injection dynamique des dépendances via la réflexion en Java. Bien que le framework ne soit pas aussi puissant et flexible que Spring, il permet de mieux comprendre les concepts sous-jacents de l'injection de dépendances et de la gestion de la création d'objets. Ce projet démontre également l'utilisation de la réflexion pour créer des objets et injecter des dépendances de manière automatique.
-
+</body>
+</html>
